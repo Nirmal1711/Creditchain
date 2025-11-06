@@ -26,11 +26,6 @@ import {
   Receipt
 } from 'lucide-react';
 import { DOCUMENT_TYPES, DOCUMENT_TYPE_NAMES } from '../contract';
-import { 
-  uploadDocumentToS3, 
-  calculateFileHash, 
-  validateFile 
-} from '../services/s3Service';
 
 const UserDashboard = () => {
   const { account, contract, isOwner, disconnectWallet } = useWeb3();
@@ -155,12 +150,8 @@ const UserDashboard = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!contract || !formData.documentFile || !account) {
-      console.log('Missing contract, file, or account:', { 
-        contract: !!contract, 
-        file: !!formData.documentFile,
-        account: !!account 
-      });
+    if (!contract || !formData.documentFile) {
+      console.log('Missing contract or file:', { contract: !!contract, file: !!formData.documentFile });
       return;
     }
 
@@ -168,30 +159,11 @@ const UserDashboard = () => {
     try {
       console.log('Submitting document:', formData);
       
-      // Step 1: Validate file
-      const validation = validateFile(formData.documentFile);
-      if (!validation.isValid) {
-        alert(validation.error);
-        setSubmitting(false);
-        return;
-      }
-
-      // Step 2: Calculate file hash
-      console.log('Calculating file hash...');
-      const fileHash = await calculateFileHash(formData.documentFile);
+      // Generate a simple hash for the file
+      const fileHash = ethers.keccak256(ethers.toUtf8Bytes(formData.documentFile.name + Date.now()));
       console.log('Generated file hash:', fileHash);
-
-      // Step 3: Upload file to S3
-      console.log('Uploading file to S3...');
-      const s3Key = await uploadDocumentToS3(
-        formData.documentFile,
-        account,
-        fileHash,
-        parseInt(formData.docType)
-      );
-      console.log('File uploaded to S3:', s3Key);
-
-      // Step 4: For demo purposes, we'll use placeholder values
+      
+      // For demo purposes, we'll use placeholder values
       // In a real app, these would be extracted from the document
       const salary = 50000; // Placeholder
       const employmentYears = 3; // Placeholder
@@ -202,7 +174,6 @@ const UserDashboard = () => {
 
       console.log('Calling submitDocumentWithParams with:', {
         fileHash,
-        s3Key,
         docType: parseInt(formData.docType),
         salary,
         employmentYears,
@@ -212,10 +183,6 @@ const UserDashboard = () => {
         documentAuthenticity
       });
 
-      // Step 5: Submit to blockchain with hash and S3 key
-      // Note: Smart contract will be updated to accept S3 key as additional parameter
-      // For now, we'll store it in the hash (temporary solution)
-      // TODO: Update smart contract to accept S3 key separately
       const tx = await contract.submitDocumentWithParams(
         fileHash,
         parseInt(formData.docType),
@@ -230,12 +197,6 @@ const UserDashboard = () => {
       console.log('Transaction submitted:', tx.hash);
       await tx.wait();
       console.log('Transaction confirmed');
-      
-      // Store S3 key mapping locally (temporary until smart contract is updated)
-      // In production, this should be stored in the smart contract
-      const s3Mapping = JSON.parse(localStorage.getItem('s3DocumentMapping') || '{}');
-      s3Mapping[fileHash] = s3Key;
-      localStorage.setItem('s3DocumentMapping', JSON.stringify(s3Mapping));
       
       console.log('Reloading user data...');
       await loadUserData();

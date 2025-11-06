@@ -25,12 +25,9 @@ import {
   XCircle,
   Search,
   Wallet,
-  Calculator,
-  Eye,
-  Download
+  Calculator
 } from 'lucide-react';
 import { DOCUMENT_TYPE_NAMES } from '../contract';
-import { getDocumentUrl, generateS3Key } from '../services/s3Service';
 
 const ValidatorDashboard = () => {
   const { account, contract, isOwner, disconnectWallet } = useWeb3();
@@ -45,8 +42,6 @@ const ValidatorDashboard = () => {
   const [validating, setValidating] = useState(false);
   const [allPendingDocs, setAllPendingDocs] = useState([]);
   const [recentUsers, setRecentUsers] = useState([]);
-  const [viewingDocument, setViewingDocument] = useState(null);
-  const [documentUrl, setDocumentUrl] = useState(null);
 
   useEffect(() => {
     if (!account) {
@@ -222,64 +217,6 @@ const ValidatorDashboard = () => {
       alert('Error updating user status: ' + error.message);
     } finally {
       setValidating(false);
-    }
-  };
-
-  const viewDocument = async (docHash, walletAddress) => {
-    try {
-      setViewingDocument(true);
-      setDocumentUrl(null);
-      
-      // Get S3 key from localStorage mapping (temporary solution)
-      // TODO: Get S3 key from smart contract when updated
-      const s3Mapping = JSON.parse(localStorage.getItem('s3DocumentMapping') || '{}');
-      let s3Key = s3Mapping[docHash];
-      let url = null;
-      
-      // If not found in mapping, try to generate from wallet address and hash
-      if (!s3Key) {
-        // Try common file extensions
-        const extensions = ['pdf', 'jpg', 'jpeg', 'png'];
-        for (const ext of extensions) {
-          const generatedKey = generateS3Key(walletAddress, docHash, ext);
-          try {
-            url = await getDocumentUrl(generatedKey, 3600);
-            s3Key = generatedKey;
-            break;
-          } catch (error) {
-            // Try next extension
-            continue;
-          }
-        }
-      } else {
-        // Get presigned URL for the document
-        url = await getDocumentUrl(s3Key, 3600);
-      }
-      
-      if (!s3Key || !url) {
-        alert('Document not found in S3. Please ensure the document was uploaded correctly.');
-        setViewingDocument(false);
-        setDocumentUrl(null);
-        return;
-      }
-      
-      setDocumentUrl(url);
-    } catch (error) {
-      console.error('Error viewing document:', error);
-      alert('Error loading document: ' + error.message);
-      setViewingDocument(false);
-      setDocumentUrl(null);
-    }
-  };
-
-  const closeDocumentViewer = () => {
-    setViewingDocument(false);
-    setDocumentUrl(null);
-  };
-
-  const downloadDocument = () => {
-    if (documentUrl) {
-      window.open(documentUrl, '_blank');
     }
   };
 
@@ -537,67 +474,27 @@ const ValidatorDashboard = () => {
                             </div>
                           </TableCell>
                           <TableCell>
-                            <div className="flex items-center space-x-2">
+                            {!doc.isValidated ? (
                               <Button
-                                onClick={() => viewDocument(doc.docHash, selectedUser)}
-                                disabled={viewingDocument}
-                                variant="outline"
+                                onClick={() => validateDocument(index)}
+                                disabled={validating}
                                 size="sm"
                               >
-                                <Eye className="h-4 w-4 mr-2" />
-                                View
+                                <CheckCircle className="h-4 w-4 mr-2" />
+                                Validate
                               </Button>
-                              {!doc.isValidated ? (
-                                <Button
-                                  onClick={() => validateDocument(index)}
-                                  disabled={validating}
-                                  size="sm"
-                                >
-                                  <CheckCircle className="h-4 w-4 mr-2" />
-                                  Validate
-                                </Button>
-                              ) : (
-                                <div className="flex items-center text-green-600">
-                                  <CheckCircle className="h-4 w-4 mr-2" />
-                                  Validated
-                                </div>
-                              )}
-                            </div>
+                            ) : (
+                              <div className="flex items-center text-green-600">
+                                <CheckCircle className="h-4 w-4 mr-2" />
+                                Validated
+                              </div>
+                            )}
                           </TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
                   </Table>
                 )}
-              </CardContent>
-            </Card>
-          </div>
-        )}
-
-        {/* Document Viewer Modal */}
-        {viewingDocument && documentUrl && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <Card className="max-w-4xl w-full max-h-[90vh] overflow-hidden">
-              <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle>Document Viewer</CardTitle>
-                <div className="flex space-x-2">
-                  <Button onClick={downloadDocument} variant="outline" size="sm">
-                    <Download className="h-4 w-4 mr-2" />
-                    Download
-                  </Button>
-                  <Button onClick={closeDocumentViewer} variant="outline" size="sm">
-                    Close
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent className="p-0">
-                <div className="w-full h-[70vh] overflow-auto">
-                  <iframe
-                    src={documentUrl}
-                    className="w-full h-full border-0"
-                    title="Document Viewer"
-                  />
-                </div>
               </CardContent>
             </Card>
           </div>
