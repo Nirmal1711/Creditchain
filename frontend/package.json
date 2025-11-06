@@ -39,7 +39,9 @@
     "react-dom": "^18.2.0",
     "react-router-dom": "^6.8.1",
     "react-scripts": "5.0.1",
-    "web3": "^4.3.0"
+    "web3": "^4.3.0",
+    "@aws-sdk/client-s3": "^3.490.0",
+    "@aws-sdk/s3-request-presigner": "^3.490.0"
   },
   "browserslist": {
     "production": [
