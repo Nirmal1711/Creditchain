@@ -36,33 +36,18 @@ const UserDashboard = () => {
   const [validatedCount, setValidatedCount] = useState(0);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState(null);
+  const [uploadMessage, setUploadMessage] = useState("");
+  
+  // S3 Bucket URL - Update this with your S3 bucket URL
+  // You can also use environment variable: process.env.REACT_APP_S3_BUCKET_URL
+  const bucketUrl = process.env.REACT_APP_S3_BUCKET_URL || "https://my-test-upload-bucket-yong-01.s3.amazonaws.com";
 
   // Simplified form state - only document type and file
   const [formData, setFormData] = useState({
     docType: '0',
     documentFile: null
   });
-
-  useEffect(() => {
-    if (!account) {
-      navigate('/');
-    } else if (isOwner) {
-      navigate('/validator');
-    } else {
-      loadUserData();
-    }
-  }, [account, isOwner, navigate]);
-
-  // Auto-refresh data every 10 seconds
-  useEffect(() => {
-    const interval = setInterval(() => {
-      if (account && !isOwner) {
-        loadUserData();
-      }
-    }, 10000); // 10 seconds
-
-    return () => clearInterval(interval);
-  }, [account, isOwner]);
 
   const loadUserData = async () => {
     if (!contract || !account) {
@@ -73,28 +58,64 @@ const UserDashboard = () => {
     setLoading(true);
     try {
       console.log('Loading user data for account:', account);
+      console.log('Contract address:', contract.target);
       
-      const userCredit = await contract.getUserCredit(account);
-      console.log('User credit data:', userCredit);
+      // Check if contract is properly initialized
+      if (!contract.target) {
+        throw new Error('Contract is not properly initialized. Please reconnect your wallet.');
+      }
+      
+      // Fetch user credit data
+      let userCredit;
+      try {
+        userCredit = await contract.getUserCredit(account);
+        console.log('User credit data:', userCredit);
+      } catch (creditError) {
+        console.error('Error fetching user credit:', creditError);
+        // If user doesn't exist, set default values
+        if (creditError.message && creditError.message.includes('User not found')) {
+          setCreditScore(0);
+          setValidatedCount(0);
+          setDocuments([]);
+          return;
+        }
+        throw creditError;
+      }
       
       // Always set credit data, even if user doesn't exist yet
       setCreditScore(userCredit.creditScore.toNumber());
       setValidatedCount(userCredit.validatedDocs.toNumber());
+      setError(null); // Clear any previous errors
 
-      const userDocs = await contract.getUserDocuments(account);
-      console.log('User documents:', userDocs);
+      // Fetch user documents
+      let userDocs;
+      try {
+        userDocs = await contract.getUserDocuments(account);
+        console.log('User documents:', userDocs);
+      } catch (docsError) {
+        console.error('Error fetching user documents:', docsError);
+        // If error fetching documents, set empty array
+        setDocuments([]);
+        return;
+      }
       
       // Check if user has any documents
-      if (userDocs[0].length === 0) {
+      if (!userDocs || !userDocs[0] || userDocs[0].length === 0) {
         console.log('No documents found for user');
         setDocuments([]);
         return;
       }
       
+      // Get detailed document information
       try {
-        // Get detailed document information
         const userDocDetails = await contract.getUserDocumentDetails(account);
         console.log('User document details:', userDocDetails);
+        
+        // Validate that arrays have the same length
+        if (userDocDetails[0].length !== userDocs[0].length) {
+          console.warn('Document details length mismatch, using basic info');
+          throw new Error('Length mismatch');
+        }
         
         // Map the basic and detailed information together
         const formattedDocs = userDocs[0].map((docHash, index) => ({
@@ -136,31 +157,116 @@ const UserDashboard = () => {
       }
     } catch (error) {
       console.error('Error loading user data:', error);
+      // Show user-friendly error message
+      if (error.message) {
+        console.error('Error details:', error.message);
+        setError(`Failed to load data: ${error.message}`);
+      } else {
+        setError('Failed to load data from blockchain. Please check your connection and try again.');
+      }
+      // Don't clear existing data on error, just log it
     } finally {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (!account) {
+      navigate('/');
+    } else if (isOwner) {
+      navigate('/validator');
+    } else if (contract) {
+      loadUserData();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [account, isOwner, navigate, contract]);
+
+  // Auto-refresh data every 10 seconds
+  useEffect(() => {
+    if (!account || isOwner || !contract) return;
+    
+    const interval = setInterval(() => {
+      loadUserData();
+    }, 10000); // 10 seconds
+
+    return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [account, isOwner, contract]);
 
   const handleFileChange = (e) => {
     setFormData({
       ...formData,
       documentFile: e.target.files[0]
     });
+    setUploadMessage(""); // Clear previous upload message
+  };
+
+  // Upload file to S3
+  const uploadToS3 = async (file) => {
+    if (!file) {
+      throw new Error("No file selected");
+    }
+
+    // Create unique filename with user address and timestamp
+    const timestamp = Date.now();
+    const fileName = `${account?.slice(2, 10)}_${timestamp}_${file.name}`;
+    const uploadUrl = `${bucketUrl}/${encodeURIComponent(fileName)}`;
+
+    try {
+      setUploadMessage("Uploading file to S3...");
+      
+      const res = await fetch(uploadUrl, {
+        method: "PUT",
+        headers: { "Content-Type": file.type },
+        body: file,
+      });
+
+      if (res.ok) {
+        const s3FileUrl = `${bucketUrl}/${fileName}`;
+        setUploadMessage(`✅ File uploaded to S3 successfully!`);
+        console.log('File uploaded to S3:', s3FileUrl);
+        return s3FileUrl;
+      } else {
+        throw new Error(`S3 upload failed with status: ${res.status}`);
+      }
+    } catch (err) {
+      console.error('S3 upload error:', err);
+      throw new Error(`Failed to upload file: ${err.message}`);
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!contract || !formData.documentFile) {
-      console.log('Missing contract or file:', { contract: !!contract, file: !!formData.documentFile });
+    if (!contract || !formData.documentFile || !account) {
+      console.log('Missing contract, file, or account:', { 
+        contract: !!contract, 
+        file: !!formData.documentFile,
+        account: !!account 
+      });
       return;
     }
 
     setSubmitting(true);
+    setUploadMessage("");
+    setError(null);
+    
     try {
       console.log('Submitting document:', formData);
       
-      // Generate a simple hash for the file
-      const fileHash = ethers.keccak256(ethers.toUtf8Bytes(formData.documentFile.name + Date.now()));
+      // Step 1: Upload file to S3 first
+      let s3FileUrl;
+      try {
+        s3FileUrl = await uploadToS3(formData.documentFile);
+        console.log('S3 file URL:', s3FileUrl);
+      } catch (uploadError) {
+        console.error('S3 upload failed:', uploadError);
+        setError(`File upload failed: ${uploadError.message}`);
+        setSubmitting(false);
+        return;
+      }
+      
+      // Step 2: Generate hash for the file (using S3 URL + file name for uniqueness)
+      const fileHash = ethers.keccak256(ethers.toUtf8Bytes(s3FileUrl + formData.documentFile.name + Date.now()));
       console.log('Generated file hash:', fileHash);
       
       // For demo purposes, we'll use placeholder values
@@ -206,10 +312,12 @@ const UserDashboard = () => {
         docType: '0',
         documentFile: null
       });
+      setUploadMessage("");
       
-      alert('Document submitted successfully! Validators will review and extract the details.');
+      alert('Document submitted successfully! File uploaded to S3 and submitted to blockchain. Validators will review and extract the details.');
     } catch (error) {
       console.error('Error submitting document:', error);
+      setError(`Error submitting document: ${error.message}`);
       alert('Error submitting document: ' + error.message);
     } finally {
       setSubmitting(false);
@@ -275,6 +383,30 @@ const UserDashboard = () => {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Error Message */}
+        {error && (
+          <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4">
+            <div className="flex items-start">
+              <AlertCircle className="h-5 w-5 text-red-600 mt-0.5 mr-3" />
+              <div className="flex-1">
+                <h3 className="text-sm font-medium text-red-800">Error Loading Data</h3>
+                <p className="text-sm text-red-700 mt-1">{error}</p>
+                <Button
+                  onClick={() => {
+                    setError(null);
+                    loadUserData();
+                  }}
+                  variant="outline"
+                  size="sm"
+                  className="mt-2"
+                >
+                  Retry
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+        
         {/* Credit Score Overview */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <Card>
@@ -309,7 +441,6 @@ const UserDashboard = () => {
             <CardContent>
               <div className="text-2xl font-bold">{documents.length}</div>
               <p className="text-xs text-muted-foreground">Submitted documents</p>
-              <p className="text-xs text-red-500 mt-1">Debug: {documents.length} docs loaded</p>
             </CardContent>
           </Card>
 
@@ -395,6 +526,11 @@ const UserDashboard = () => {
                     <p className="text-sm text-muted-foreground">
                       Supported formats: PDF, JPG, PNG. Max size: 10MB
                     </p>
+                    {uploadMessage && (
+                      <p className={`text-sm mt-2 ${uploadMessage.includes('✅') ? 'text-green-600' : 'text-blue-600'}`}>
+                        {uploadMessage}
+                      </p>
+                    )}
                   </div>
 
                   <Button type="submit" disabled={submitting || !formData.documentFile} className="w-full">
