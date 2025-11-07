@@ -13,6 +13,7 @@ export const CONTRACT_ABI = [
   "function calculateCreditScore(address user)",
   
   "function getCreditScore(address user) view returns (uint256)",
+  "function getUserCredit(address user) view returns (uint256 creditScore, uint256 validatedDocs, bool isActive)",
   "function getUserDocuments(address user) view returns (bytes32[] memory docHashes, uint8[] memory docTypes, bool[] memory isValidatedArray, uint256[] memory submissionTimes)",
   "function getUserDocumentDetails(address user) view returns (uint256[] memory salaries, uint256[] memory employmentYears, uint256[] memory repaymentHistoryScores, uint256[] memory currentBalances, uint256[] memory lastTotalUtilityBills, bool[] memory documentAuthenticities, uint256[] memory validationTimes)",
   "function getUserDocumentCount(address user) view returns (uint256)",
@@ -45,4 +46,4 @@ export const DOCUMENT_TYPE_NAMES = {
 // For Sepolia: Set REACT_APP_CONTRACT_ADDRESS in your .env file or CI/CD pipeline
 // For Cloud9: Create frontend/.env file with REACT_APP_CONTRACT_ADDRESS=your_sepolia_address
 //export const CONTRACT_ADDRESS = process.env.REACT_APP_CONTRACT_ADDRESS || "0xE5baEAFCE03B420012E2F9c5c82155512880e0FA";
-export const CONTRACT_ADDRESS = "0xF919CB94Df47673335CBB19395Cf8638133b8DD8";
+export const CONTRACT_ADDRESS = "0x377c7Bf5701e62541A6EeB43b8b601594E708C38";

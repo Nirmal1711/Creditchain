@@ -34260,12 +34260,12 @@
     "11155111": {
       "events": {},
       "links": {},
-      "address": "0xF919CB94Df47673335CBB19395Cf8638133b8DD8",
-      "transactionHash": "0x9439c861040a3d59734c3584f45dd56803e57179e09b5339a710d1e9f53b2f30"
+      "address": "0x377c7Bf5701e62541A6EeB43b8b601594E708C38",
+      "transactionHash": "0xc450df9965f4f79bf827ae6f32a276ed7ed433ebe59b5ad35d1031e49f257972"
     }
   },
   "schemaVersion": "3.4.16",
-  "updatedAt": "2025-11-07T06:41:49.762Z",
+  "updatedAt": "2025-11-07T19:00:49.684Z",
   "networkType": "ethereum",
   "devdoc": {
     "details": "A credit scoring system based on document validation with weighted parameters",
