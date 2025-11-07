@@ -19,7 +19,7 @@ RUN chmod +x node_modules/.bin/*
 # Build the application using npx
 #RUN npx react-scripts build
 ENV CI=false
-RUN npm run build
+RUN npx react-scripts build
 
 # Production stage with nginx
 FROM nginx:alpine
