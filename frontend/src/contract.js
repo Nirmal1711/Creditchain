@@ -46,4 +46,4 @@ export const DOCUMENT_TYPE_NAMES = {
 // For Sepolia: Set REACT_APP_CONTRACT_ADDRESS in your .env file or CI/CD pipeline
 // For Cloud9: Create frontend/.env file with REACT_APP_CONTRACT_ADDRESS=your_sepolia_address
 //export const CONTRACT_ADDRESS = process.env.REACT_APP_CONTRACT_ADDRESS || "0xE5baEAFCE03B420012E2F9c5c82155512880e0FA";
-export const CONTRACT_ADDRESS = "0x377c7Bf5701e62541A6EeB43b8b601594E708C38";
+export const CONTRACT_ADDRESS = "0xcD112F1738593B331A9d93b1f7582656DE78C6e6";
