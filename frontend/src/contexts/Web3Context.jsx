@@ -37,11 +37,29 @@ export const Web3Provider = ({ children }) => {
 
       const web3Provider = new ethers.BrowserProvider(window.ethereum);
       const web3Signer = await web3Provider.getSigner();
+      
+      // Get network info
+      const network = await web3Provider.getNetwork();
+      console.log('Connected to network:', network);
+      console.log('Contract address:', CONTRACT_ADDRESS);
+      
       const contractInstance = new ethers.Contract(
         CONTRACT_ADDRESS,
         CONTRACT_ABI,
         web3Signer
       );
+
+      // Verify contract is deployed at this address
+      try {
+        const code = await web3Provider.getCode(CONTRACT_ADDRESS);
+        if (code === '0x') {
+          throw new Error(`No contract found at address ${CONTRACT_ADDRESS}. Please verify the contract is deployed on this network.`);
+        }
+        console.log('Contract verified at address:', CONTRACT_ADDRESS);
+      } catch (verifyError) {
+        console.error('Error verifying contract:', verifyError);
+        throw new Error(`Contract verification failed: ${verifyError.message}`);
+      }
 
       setAccount(accounts[0]);
       setProvider(web3Provider);
@@ -49,8 +67,15 @@ export const Web3Provider = ({ children }) => {
       setContract(contractInstance);
 
       // Check if user is owner
-      const ownerAddress = await contractInstance.owner();
-      setIsOwner(ownerAddress.toLowerCase() === accounts[0].toLowerCase());
+      try {
+        const ownerAddress = await contractInstance.owner();
+        setIsOwner(ownerAddress.toLowerCase() === accounts[0].toLowerCase());
+        console.log('Contract owner:', ownerAddress);
+      } catch (ownerError) {
+        console.error('Error checking owner:', ownerError);
+        // Don't throw, just set isOwner to false
+        setIsOwner(false);
+      }
 
       setLoading(false);
     } catch (err) {

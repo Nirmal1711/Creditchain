@@ -1,8 +1,19 @@
 # Multi-stage build for React application
-FROM node:18-alpine as build
+FROM node:18-alpine AS build
 
 # Set working directory
 WORKDIR /app
+
+# Accept build arguments for environment variables
+# These are passed at build time and embedded in the React bundle
+ARG REACT_APP_CONTRACT_ADDRESS=""
+ARG REACT_APP_NETWORK_ID="11155111"
+ARG REACT_APP_S3_BUCKET_URL=""
+
+# Set environment variables for React build
+ENV REACT_APP_CONTRACT_ADDRESS=$REACT_APP_CONTRACT_ADDRESS
+ENV REACT_APP_NETWORK_ID=$REACT_APP_NETWORK_ID
+ENV REACT_APP_S3_BUCKET_URL=$REACT_APP_S3_BUCKET_URL
 
 # Copy package files from frontend directory
 COPY frontend/package*.json ./
@@ -16,10 +27,10 @@ COPY frontend/ .
 # Set proper permissions
 RUN chmod +x node_modules/.bin/*
 
-# Build the application using npx
-#RUN npx react-scripts build
+# Build the application using npx (environment variables are embedded at build time)
+# Set CI=false to prevent build failures on warnings
 ENV CI=false
-RUN npx react-scripts build
+RUN npm run build
 
 # Production stage with nginx
 FROM nginx:alpine

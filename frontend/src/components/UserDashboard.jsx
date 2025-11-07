@@ -178,7 +178,7 @@ const UserDashboard = () => {
     } else if (contract) {
       loadUserData();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line
   }, [account, isOwner, navigate, contract]);
 
   // Auto-refresh data every 10 seconds
@@ -190,7 +190,7 @@ const UserDashboard = () => {
     }, 10000); // 10 seconds
 
     return () => clearInterval(interval);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line
   }, [account, isOwner, contract]);
 
   const handleFileChange = (e) => {

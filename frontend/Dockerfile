@@ -4,6 +4,15 @@ FROM node:18-alpine as build
 # Set working directory
 WORKDIR /app
 
+# Accept build arguments for environment variables
+# These are passed at build time and embedded in the React bundle
+ARG REACT_APP_CONTRACT_ADDRESS
+ARG REACT_APP_NETWORK_ID
+
+# Set environment variables for React build
+ENV REACT_APP_CONTRACT_ADDRESS=$REACT_APP_CONTRACT_ADDRESS
+ENV REACT_APP_NETWORK_ID=$REACT_APP_NETWORK_ID
+
 # Copy package files from frontend directory
 COPY frontend/package*.json ./
 
@@ -13,7 +22,7 @@ RUN npm install
 # Copy source code from frontend directory
 COPY frontend/ .
 
-# Build the application
+# Build the application (environment variables are embedded at build time)
 RUN npm run build
 
 # Production stage with nginx
