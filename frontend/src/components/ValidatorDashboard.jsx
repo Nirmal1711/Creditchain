@@ -59,7 +59,8 @@ const ValidatorDashboard = () => {
     setLoading(true);
     try {
       const total = await contract.totalUsers();
-      setTotalUsers(total.toNumber());
+      // In ethers v6, BigNumber values are BigInt, so use Number() instead of toNumber()
+      setTotalUsers(Number(total));
       
       // Load all pending documents
       await loadAllPendingDocuments();
@@ -91,8 +92,14 @@ const ValidatorDashboard = () => {
       const userCredit = await contract.getUserCredit(searchAddress);
       const userDocs = await contract.getUserDocuments(searchAddress);
       
+      // In ethers v6, BigNumber values are BigInt, so use Number() instead of toNumber()
+      // Handle both array and object return formats
+      const creditScore = Array.isArray(userCredit) ? Number(userCredit[0]) : Number(userCredit.creditScore);
+      const validatedDocs = Array.isArray(userCredit) ? Number(userCredit[1]) : Number(userCredit.validatedDocs);
+      const isActive = Array.isArray(userCredit) ? userCredit[2] : userCredit.isActive;
+      
       // Check if user exists (has any credit data)
-      if (userCredit.creditScore.toNumber() === 0 && userCredit.validatedDocs.toNumber() === 0 && !userCredit.isActive) {
+      if (creditScore === 0 && validatedDocs === 0 && !isActive) {
         console.log('User does not exist yet, initializing with default values');
         setUserCredit({
           creditScore: 0,
@@ -105,9 +112,9 @@ const ValidatorDashboard = () => {
       }
       
       setUserCredit({
-        creditScore: userCredit.creditScore.toNumber(),
-        validatedDocs: userCredit.validatedDocs.toNumber(),
-        isActive: userCredit.isActive
+        creditScore: creditScore,
+        validatedDocs: validatedDocs,
+        isActive: isActive
       });
 
       // Check if user has any documents
@@ -122,19 +129,20 @@ const ValidatorDashboard = () => {
       console.log('User document details:', userDocDetails);
       
       // Map the basic and detailed information together
+      // In ethers v6, BigNumber values are BigInt, so use Number() instead of toNumber()
       const formattedDocs = userDocs[0].map((docHash, index) => ({
         id: index,
         docHash: docHash,
-        docType: userDocs[1][index], // docTypes array
-        salary: userDocDetails[0][index].toNumber(), // salaries array
-        employmentYears: userDocDetails[1][index].toNumber(), // employmentYears array
-        repaymentHistoryScore: userDocDetails[2][index].toNumber(), // repaymentHistoryScores array
-        currentBalance: userDocDetails[3][index].toNumber(), // currentBalances array
-        lastTotalUtilityBills: userDocDetails[4][index].toNumber(), // lastTotalUtilityBills array
+        docType: Number(userDocs[1][index]), // docTypes array
+        salary: Number(userDocDetails[0][index]), // salaries array
+        employmentYears: Number(userDocDetails[1][index]), // employmentYears array
+        repaymentHistoryScore: Number(userDocDetails[2][index]), // repaymentHistoryScores array
+        currentBalance: Number(userDocDetails[3][index]), // currentBalances array
+        lastTotalUtilityBills: Number(userDocDetails[4][index]), // lastTotalUtilityBills array
         documentAuthenticity: userDocDetails[5][index], // documentAuthenticities array
         isValidated: userDocs[2][index], // isValidatedArray array
-        submissionTime: new Date(userDocs[3][index].toNumber() * 1000), // submissionTimes array
-        validationTime: userDocDetails[6][index].toNumber() > 0 ? new Date(userDocDetails[6][index].toNumber() * 1000) : null // validationTimes array
+        submissionTime: new Date(Number(userDocs[3][index]) * 1000), // submissionTimes array
+        validationTime: Number(userDocDetails[6][index]) > 0 ? new Date(Number(userDocDetails[6][index]) * 1000) : null // validationTimes array
       }));
       
       setUserDocuments(formattedDocs);
@@ -219,6 +227,7 @@ const ValidatorDashboard = () => {
       setValidating(false);
     }
   };
+
 
   const refreshData = async () => {
     if (selectedUser) {
@@ -499,6 +508,7 @@ const ValidatorDashboard = () => {
             </Card>
           </div>
         )}
+
       </div>
     </div>
   );

@@ -83,8 +83,12 @@ const UserDashboard = () => {
       }
       
       // Always set credit data, even if user doesn't exist yet
-      setCreditScore(userCredit.creditScore.toNumber());
-      setValidatedCount(userCredit.validatedDocs.toNumber());
+      // In ethers v6, BigNumber values are BigInt, so use Number() instead of toNumber()
+      // Handle both array and object return formats
+      const creditScore = Array.isArray(userCredit) ? Number(userCredit[0]) : Number(userCredit.creditScore);
+      const validatedDocs = Array.isArray(userCredit) ? Number(userCredit[1]) : Number(userCredit.validatedDocs);
+      setCreditScore(creditScore);
+      setValidatedCount(validatedDocs);
       setError(null); // Clear any previous errors
 
       // Fetch user documents
@@ -118,19 +122,20 @@ const UserDashboard = () => {
         }
         
         // Map the basic and detailed information together
+        // In ethers v6, BigNumber values are BigInt, so use Number() instead of toNumber()
         const formattedDocs = userDocs[0].map((docHash, index) => ({
           id: index,
           docHash: docHash,
-          docType: userDocs[1][index], // docTypes array
-          salary: userDocDetails[0][index].toNumber(), // salaries array
-          employmentYears: userDocDetails[1][index].toNumber(), // employmentYears array
-          repaymentHistoryScore: userDocDetails[2][index].toNumber(), // repaymentHistoryScores array
-          currentBalance: userDocDetails[3][index].toNumber(), // currentBalances array
-          lastTotalUtilityBills: userDocDetails[4][index].toNumber(), // lastTotalUtilityBills array
+          docType: Number(userDocs[1][index]), // docTypes array
+          salary: Number(userDocDetails[0][index]), // salaries array
+          employmentYears: Number(userDocDetails[1][index]), // employmentYears array
+          repaymentHistoryScore: Number(userDocDetails[2][index]), // repaymentHistoryScores array
+          currentBalance: Number(userDocDetails[3][index]), // currentBalances array
+          lastTotalUtilityBills: Number(userDocDetails[4][index]), // lastTotalUtilityBills array
           documentAuthenticity: userDocDetails[5][index], // documentAuthenticities array
           isValidated: userDocs[2][index], // isValidatedArray array
-          submissionTime: new Date(userDocs[3][index].toNumber() * 1000), // submissionTimes array
-          validationTime: userDocDetails[6][index].toNumber() > 0 ? new Date(userDocDetails[6][index].toNumber() * 1000) : null // validationTimes array
+          submissionTime: new Date(Number(userDocs[3][index]) * 1000), // submissionTimes array
+          validationTime: Number(userDocDetails[6][index]) > 0 ? new Date(Number(userDocDetails[6][index]) * 1000) : null // validationTimes array
         }));
         
         console.log('Formatted documents:', formattedDocs);
@@ -138,10 +143,11 @@ const UserDashboard = () => {
       } catch (detailError) {
         console.error('Error loading document details:', detailError);
         // Fallback: create basic document info without details
+        // In ethers v6, BigNumber values are BigInt, so use Number() instead of toNumber()
         const basicDocs = userDocs[0].map((docHash, index) => ({
           id: index,
           docHash: docHash,
-          docType: userDocs[1][index],
+          docType: Number(userDocs[1][index]),
           salary: 0,
           employmentYears: 0,
           repaymentHistoryScore: 0,
@@ -149,7 +155,7 @@ const UserDashboard = () => {
           lastTotalUtilityBills: 0,
           documentAuthenticity: false,
           isValidated: userDocs[2][index],
-          submissionTime: new Date(userDocs[3][index].toNumber() * 1000),
+          submissionTime: new Date(Number(userDocs[3][index]) * 1000),
           validationTime: null
         }));
         console.log('Basic documents (fallback):', basicDocs);
@@ -301,8 +307,11 @@ const UserDashboard = () => {
       );
 
       console.log('Transaction submitted:', tx.hash);
-      await tx.wait();
-      console.log('Transaction confirmed');
+      const receipt = await tx.wait();
+      console.log('Transaction confirmed in block:', receipt.blockNumber);
+      
+      // Wait a moment for the blockchain state to update
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
       console.log('Reloading user data...');
       await loadUserData();
