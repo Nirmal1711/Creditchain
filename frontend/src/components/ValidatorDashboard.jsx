@@ -476,10 +476,24 @@ const ValidatorDashboard = () => {
                           </TableCell>
                           <TableCell>
                             <div className="text-sm space-y-1">
-                              <p>Salary: ${doc.salary.toLocaleString()}</p>
-                              <p>Employment: {doc.employmentYears} years</p>
-                              <p>Repayment: {doc.repaymentHistoryScore}/100</p>
-                              <p>Balance: ${doc.currentBalance.toLocaleString()}</p>
+                              {doc.docType === 0 && ( // Bank Statement
+                                <>
+                                  <p>Balance: ${doc.currentBalance.toLocaleString()}</p>
+                                  <p>Repayment: {doc.repaymentHistoryScore}/100</p>
+                                </>
+                              )}
+                              {doc.docType === 1 && ( // Utility Bill
+                                <>
+                                  <p>Utility Bill: ${doc.lastTotalUtilityBills.toLocaleString()}</p>
+                                  <p>Repayment: {doc.repaymentHistoryScore}/100</p>
+                                </>
+                              )}
+                              {doc.docType === 2 && ( // Salary Slip
+                                <>
+                                  <p>Salary: ${doc.salary.toLocaleString()}</p>
+                                  <p>Employment: {doc.employmentYears} years</p>
+                                </>
+                              )}
                             </div>
                           </TableCell>
                           <TableCell>

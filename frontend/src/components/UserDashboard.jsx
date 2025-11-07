@@ -187,18 +187,6 @@ const UserDashboard = () => {
     // eslint-disable-next-line
   }, [account, isOwner, navigate, contract]);
 
-  // Auto-refresh data every 10 seconds
-  useEffect(() => {
-    if (!account || isOwner || !contract) return;
-    
-    const interval = setInterval(() => {
-      loadUserData();
-    }, 10000); // 10 seconds
-
-    return () => clearInterval(interval);
-    // eslint-disable-next-line
-  }, [account, isOwner, contract]);
-
   const handleFileChange = (e) => {
     setFormData({
       ...formData,
@@ -697,30 +685,6 @@ const UserDashboard = () => {
                               </Badge>
                             </div>
                           </div>
-                          
-                          {doc.isValidated && (
-                            <div className="mt-4 pt-4 border-t">
-                              <h4 className="font-medium mb-2">Extracted Details:</h4>
-                              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                                <div>
-                                  <p className="text-muted-foreground">Salary</p>
-                                  <p className="font-medium">${doc.salary.toLocaleString()}</p>
-                                </div>
-                                <div>
-                                  <p className="text-muted-foreground">Employment Years</p>
-                                  <p className="font-medium">{doc.employmentYears}</p>
-                                </div>
-                                <div>
-                                  <p className="text-muted-foreground">Repayment Score</p>
-                                  <p className="font-medium">{doc.repaymentHistoryScore}/100</p>
-                                </div>
-                                <div>
-                                  <p className="text-muted-foreground">Current Balance</p>
-                                  <p className="font-medium">${doc.currentBalance.toLocaleString()}</p>
-                                </div>
-                              </div>
-                            </div>
-                          )}
                         </CardContent>
                       </Card>
                     ))}
