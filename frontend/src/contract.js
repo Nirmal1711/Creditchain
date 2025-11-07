@@ -44,5 +44,5 @@ export const DOCUMENT_TYPE_NAMES = {
 // Contract address - uses environment variable for Sepolia, fallback to Ganache for local dev
 // For Sepolia: Set REACT_APP_CONTRACT_ADDRESS in your .env file or CI/CD pipeline
 // For Cloud9: Create frontend/.env file with REACT_APP_CONTRACT_ADDRESS=your_sepolia_address
-export const CONTRACT_ADDRESS = process.env.REACT_APP_CONTRACT_ADDRESS || "0xE5baEAFCE03B420012E2F9c5c82155512880e0FA";
-
+//export const CONTRACT_ADDRESS = process.env.REACT_APP_CONTRACT_ADDRESS || "0xE5baEAFCE03B420012E2F9c5c82155512880e0FA";
+export const CONTRACT_ADDRESS = "0xF919CB94Df47673335CBB19395Cf8638133b8DD8";
