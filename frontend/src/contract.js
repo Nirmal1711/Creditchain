@@ -36,6 +36,12 @@ export const DOCUMENT_TYPES = {
   SALARY_SLIP: 2
 };
 
+export const DOCUMENT_TYPE_NAMES = {
+  0: "Bank Statement",
+  1: "Utility Bill",
+  2: "Salary Slip"
+};
+
 // Contract address - uses environment variable for Sepolia, fallback to Ganache for local dev
 // For Sepolia: Set REACT_APP_CONTRACT_ADDRESS in your .env file or CI/CD pipeline
 // For Cloud9: Create frontend/.env file with REACT_APP_CONTRACT_ADDRESS=your_sepolia_address

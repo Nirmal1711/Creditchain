@@ -41,7 +41,7 @@ const UserDashboard = () => {
   
   // S3 Bucket URL - Update this with your S3 bucket URL
   // You can also use environment variable: process.env.REACT_APP_S3_BUCKET_URL
-  const bucketUrl = process.env.REACT_APP_S3_BUCKET_URL || "https://my-test-upload-bucket-yong-01.s3.amazonaws.com";
+  const bucketUrl = process.env.REACT_APP_S3_BUCKET_URL || "https://capston-project-0012.s3.amazonaws.com";
 
   // Simplified form state - only document type and file
   const [formData, setFormData] = useState({
