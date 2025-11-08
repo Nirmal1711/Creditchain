@@ -297,20 +297,27 @@ contract dashboard {
             }
         }
         
-        // Require at least 2 documents: bank statement + utility bill
-        require(hasBankStatement && hasUtilityBill, "Must have validated bank statement and utility bill");
-        require(validatedCount >= MIN_REQUIRED_DOCS, "Must have at least 2 validated documents");
-        
-        // Apply only maximum credit score limit (1000)
-        if (totalScore > MAX_CREDIT_SCORE) {
-            totalScore = MAX_CREDIT_SCORE;
+        // Only calculate credit score if user has both required documents validated
+        // Allow individual document validation without requiring both upfront
+        if (hasBankStatement && hasUtilityBill && validatedCount >= MIN_REQUIRED_DOCS) {
+            // Apply only maximum credit score limit (1000)
+            if (totalScore > MAX_CREDIT_SCORE) {
+                totalScore = MAX_CREDIT_SCORE;
+            }
+            
+            // Update user's credit score only when both required documents are validated
+            userCredits[user].creditScore = totalScore;
+        } else {
+            // If requirements not met, set credit score to 0
+            // This allows individual document validation without error
+            userCredits[user].creditScore = 0;
         }
         
-        // Update user's credit score and validated document count
-        userCredits[user].creditScore = totalScore;
+        // Always update validated document count
         userCredits[user].validatedDocs = validatedCount;
         
-        emit CreditScoreUpdated(user, totalScore, validatedCount);
+        // Emit event with the actual credit score (may be 0 if requirements not met)
+        emit CreditScoreUpdated(user, userCredits[user].creditScore, validatedCount);
     }
     
     /**

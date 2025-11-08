@@ -263,14 +263,21 @@ const UserDashboard = () => {
       const fileHash = ethers.keccak256(ethers.toUtf8Bytes(s3FileUrl + formData.documentFile.name + Date.now()));
       console.log('Generated file hash:', fileHash);
       
-      // For demo purposes, we'll use placeholder values
-      // In a real app, these would be extracted from the document
-      const salary = 50000; // Placeholder
-      const employmentYears = 3; // Placeholder
-      const repaymentHistoryScore = 85; // Placeholder
-      const currentBalance = 10000; // Placeholder
-      const lastTotalUtilityBills = 200; // Placeholder
-      const documentAuthenticity = true; // Placeholder
+      // Generate unique values based on user's wallet address and timestamp
+      // This ensures each user gets different credit scores
+      // In a real app, these would be extracted from the document by validators
+      const userSeed1 = parseInt(account.slice(2, 10), 16); // First part of wallet address
+      const userSeed2 = parseInt(account.slice(10, 18), 16); // Second part of wallet address
+      const userSeed3 = parseInt(account.slice(18, 26), 16); // Third part of wallet address
+      const timestamp = Date.now();
+      
+      // Generate varied values within reasonable ranges using different seed combinations
+      const salary = 30000 + ((userSeed1 + timestamp) % 70000); // $30k - $100k
+      const employmentYears = 1 + ((userSeed2 + timestamp * 2) % 15); // 1 - 15 years
+      const repaymentHistoryScore = 60 + ((userSeed3 + timestamp * 3) % 40); // 60 - 100
+      const currentBalance = 5000 + ((userSeed1 + userSeed2 + timestamp) % 95000); // $5k - $100k
+      const lastTotalUtilityBills = 100 + ((userSeed2 + userSeed3 + timestamp * 4) % 1900); // $100 - $2000
+      const documentAuthenticity = true; // Always true for submitted documents
 
       console.log('Calling submitDocumentWithParams with:', {
         fileHash,
