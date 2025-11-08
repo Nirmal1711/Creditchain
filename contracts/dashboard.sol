@@ -245,8 +245,9 @@ contract dashboard {
      * @notice - Bank Statement: authenticity (100 fixed) + repaymentHistory% + currentBalance%
      * @notice - Utility Bill: lastTotalUtilityBills% + authenticity (100 fixed)
      * @notice - Salary Slip: income% + employmentYears% + authenticity (100 fixed)
-     * @notice Only validated documents are included in the calculation
-     * @notice Credit score is the TOTAL SUM of all validated documents, capped at maximum 1000
+     * @notice Only the LATEST validated document of each type is used in the calculation
+     * @notice This prevents duplicate documents from adding to the score
+     * @notice Credit score is the SUM of latest validated documents, capped at maximum 1000
      * @notice User must have at least 2 validated documents (bank statement + utility bill)
      */
     function _calculateCreditScore(address user) internal {
@@ -255,46 +256,66 @@ contract dashboard {
         bool hasBankStatement = false;
         bool hasUtilityBill = false;
         
-        // Calculate score based on all validated documents
+        // Track the latest validated document of each type (by index)
+        uint256 latestBankStatement = type(uint256).max; // Use max as "not found" marker
+        uint256 latestUtilityBill = type(uint256).max;
+        uint256 latestSalarySlip = type(uint256).max;
+        
+        // First pass: Find the latest validated document of each type
         for (uint256 i = 0; i < userDocuments[user].length; i++) {
             if (userDocuments[user][i].isValidated) {
                 Document memory doc = userDocuments[user][i];
                 
-                // Track required document types
                 if (doc.docType == DocumentType.BANK_STATEMENT) {
                     hasBankStatement = true;
+                    // Keep track of the latest (highest index) validated bank statement
+                    if (latestBankStatement == type(uint256).max || 
+                        userDocuments[user][i].validationTime > userDocuments[user][latestBankStatement].validationTime) {
+                        latestBankStatement = i;
+                    }
                 } else if (doc.docType == DocumentType.UTILITY_BILL) {
                     hasUtilityBill = true;
-                }
-                
-                // Apply document-specific scoring formula with percentage calculations
-                uint256 docScore = 0;
-                
-                if (doc.docType == DocumentType.BANK_STATEMENT) {
-                    // Bank Statement: authenticity (100 fixed) + repaymentHistory% + currentBalance%
-                    uint256 authenticityPoints = doc.documentAuthenticity ? 100 : 0;
-                    uint256 repaymentPoints = doc.repaymentHistoryScore; // Already 0-100
-                    uint256 balancePoints = _calculateBalancePercentage(doc.currentBalance);
-                    
-                    docScore = authenticityPoints + repaymentPoints + balancePoints;
-                } else if (doc.docType == DocumentType.UTILITY_BILL) {
-                    // Utility Bill: lastTotalUtilityBills% + authenticity (100 fixed)
-                    uint256 authenticityPoints = doc.documentAuthenticity ? 100 : 0;
-                    uint256 utilityPoints = _calculateUtilityPercentage(doc.lastTotalUtilityBills);
-                    
-                    docScore = authenticityPoints + utilityPoints;
+                    // Keep track of the latest (highest index) validated utility bill
+                    if (latestUtilityBill == type(uint256).max || 
+                        userDocuments[user][i].validationTime > userDocuments[user][latestUtilityBill].validationTime) {
+                        latestUtilityBill = i;
+                    }
                 } else if (doc.docType == DocumentType.SALARY_SLIP) {
-                    // Salary Slip: income% + employmentYears% + authenticity (100 fixed)
-                    uint256 authenticityPoints = doc.documentAuthenticity ? 100 : 0;
-                    uint256 incomePoints = _calculateIncomePercentage(doc.salary);
-                    uint256 employmentPoints = _calculateEmploymentPercentage(doc.employmentYears);
-                    
-                    docScore = authenticityPoints + incomePoints + employmentPoints;
+                    // Keep track of the latest (highest index) validated salary slip
+                    if (latestSalarySlip == type(uint256).max || 
+                        userDocuments[user][i].validationTime > userDocuments[user][latestSalarySlip].validationTime) {
+                        latestSalarySlip = i;
+                    }
                 }
-                
-                totalScore += docScore;
                 validatedCount++;
             }
+        }
+        
+        // Second pass: Calculate score using only the latest validated document of each type
+        if (latestBankStatement != type(uint256).max) {
+            Document memory doc = userDocuments[user][latestBankStatement];
+            // Bank Statement: authenticity (100 fixed) + repaymentHistory% + currentBalance%
+            uint256 authenticityPoints = doc.documentAuthenticity ? 100 : 0;
+            uint256 repaymentPoints = doc.repaymentHistoryScore; // Already 0-100
+            uint256 balancePoints = _calculateBalancePercentage(doc.currentBalance);
+            totalScore += authenticityPoints + repaymentPoints + balancePoints;
+        }
+        
+        if (latestUtilityBill != type(uint256).max) {
+            Document memory doc = userDocuments[user][latestUtilityBill];
+            // Utility Bill: lastTotalUtilityBills% + authenticity (100 fixed)
+            uint256 authenticityPoints = doc.documentAuthenticity ? 100 : 0;
+            uint256 utilityPoints = _calculateUtilityPercentage(doc.lastTotalUtilityBills);
+            totalScore += authenticityPoints + utilityPoints;
+        }
+        
+        if (latestSalarySlip != type(uint256).max) {
+            Document memory doc = userDocuments[user][latestSalarySlip];
+            // Salary Slip: income% + employmentYears% + authenticity (100 fixed)
+            uint256 authenticityPoints = doc.documentAuthenticity ? 100 : 0;
+            uint256 incomePoints = _calculateIncomePercentage(doc.salary);
+            uint256 employmentPoints = _calculateEmploymentPercentage(doc.employmentYears);
+            totalScore += authenticityPoints + incomePoints + employmentPoints;
         }
         
         // Only calculate credit score if user has both required documents validated

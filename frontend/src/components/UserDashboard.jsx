@@ -530,11 +530,6 @@ const UserDashboard = () => {
                     <p className="text-sm text-muted-foreground">
                       Supported formats: PDF, JPG, PNG. Max size: 10MB
                     </p>
-                    {uploadMessage && (
-                      <p className={`text-sm mt-2 ${uploadMessage.includes('✅') ? 'text-green-600' : 'text-blue-600'}`}>
-                        {uploadMessage}
-                      </p>
-                    )}
                   </div>
 
                   <Button type="submit" disabled={submitting || !formData.documentFile} className="w-full">
