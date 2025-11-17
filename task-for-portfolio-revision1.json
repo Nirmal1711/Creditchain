@@ -1,15 +1,16 @@
 {
     "compatibilities": [
         "EC2",
-        "FARGATE",
-        "MANAGED_INSTANCES"
+        "MANAGED_INSTANCES",
+        "FARGATE"
     ],
     "containerDefinitions": [
         {
             "cpu": 0,
             "environment": [],
+            "environmentFiles": [],
             "essential": true,
-            "image": "509368168096.dkr.ecr.us-east-1.amazonaws.com/portfolio:d93c9b52f535710b1b8ba5692ef3ad7254910f12",
+            "image": "portfolio:latest",
             "logConfiguration": {
                 "logDriver": "awslogs",
                 "options": {
@@ -32,17 +33,18 @@
                 }
             ],
             "systemControls": [],
+            "ulimits": [],
             "volumesFrom": []
         }
     ],
     "cpu": "1024",
-    "executionRoleArn": "arn:aws:iam::509368168096:role/LabRole",
+    "executionRoleArn": "arn:aws:iam::465836466206:role/LabRole",
     "family": "task-for-portfolio",
     "memory": "3072",
     "networkMode": "awsvpc",
     "placementConstraints": [],
-    "registeredAt": "2025-11-05T19:32:21.060Z",
-    "registeredBy": "arn:aws:sts::509368168096:assumed-role/voclabs/user3792140=Nirmal_Jagdishkumar_Patel",
+    "registeredAt": "2025-11-17T01:05:18.603Z",
+    "registeredBy": "arn:aws:sts::465836466206:assumed-role/voclabs/user3792140=Nirmal_Jagdishkumar_Patel",
     "requiresAttributes": [
         {
             "name": "com.amazonaws.ecs.capability.logging-driver.awslogs"
@@ -51,16 +53,10 @@
             "name": "ecs.capability.execution-role-awslogs"
         },
         {
-            "name": "com.amazonaws.ecs.capability.ecr-auth"
-        },
-        {
             "name": "com.amazonaws.ecs.capability.docker-remote-api.1.19"
         },
         {
             "name": "com.amazonaws.ecs.capability.task-iam-role"
-        },
-        {
-            "name": "ecs.capability.execution-role-ecr-pull"
         },
         {
             "name": "com.amazonaws.ecs.capability.docker-remote-api.1.18"
@@ -75,14 +71,14 @@
     "requiresCompatibilities": [
         "FARGATE"
     ],
-    "revision": 5,
+    "revision": 1,
     "runtimePlatform": {
         "cpuArchitecture": "X86_64",
         "operatingSystemFamily": "LINUX"
     },
     "status": "ACTIVE",
-    "taskDefinitionArn": "arn:aws:ecs:us-east-1:509368168096:task-definition/task-for-portfolio:5",
-    "taskRoleArn": "arn:aws:iam::509368168096:role/LabRole",
+    "taskDefinitionArn": "arn:aws:ecs:us-east-1:465836466206:task-definition/task-for-portfolio:1",
+    "taskRoleArn": "arn:aws:iam::465836466206:role/LabRole",
     "volumes": [],
     "tags": []
 }
